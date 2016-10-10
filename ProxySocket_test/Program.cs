@@ -9,15 +9,28 @@ namespace ProxySocket_test
     {
         static void Main(string[] args)
         {
-            //103.214.175.43:1080
-            Socks5Proxy proxy = new Socks5Proxy("45.64.109.2", 1080, "google.com", 80);
+            //socks 4:
+            //180.183.138.89:1080
+
+            //socks 5:
+            //189.218.41.64:24732
+            //45.64.109.2:1080
+            Socks4Proxy proxy = new Socks4Proxy("182.253.44.117", 1080, "google.com", 80);
             proxy.OnStatusChanged += OnStatusChanged;
-            proxy.BeginConnect(new AsyncCallback(OnConnected), proxy);
-            //proxy.AutoConnect(Socks5Method.NoAuthentication);
+            proxy.OnRequestAccepted += Proxy_OnRequestAccepted;
+            //proxy.BeginConnect(new AsyncCallback(OnConnected), proxy);
+            proxy.AutoConnectAsync();
             //proxy.AutoConnectAsync(Socks5Method.NoAuthentication);
             Console.ReadLine();
         }
 
+        private static void Proxy_OnRequestAccepted(object sender, EventArgs e)
+        {
+            BaseProxy proxy = (BaseProxy)sender;
+            proxy.Disconnect();
+        }
+
+        #region Callback Methods
         private static void OnStatusChanged(object sender, StatusChangedEventArgs e)
         {
             Console.WriteLine(e.Status);
@@ -62,5 +75,6 @@ namespace ProxySocket_test
 
             proxy.Disconnect();
         }
+        #endregion
     }
 }

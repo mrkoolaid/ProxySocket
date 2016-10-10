@@ -1,0 +1,8 @@
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\bin\Debug\ProxySocket_test.exe.config
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\bin\Debug\ProxySocket_test.exe
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\bin\Debug\ProxySocket_test.pdb
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\bin\Debug\ProxySocket.dll
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\bin\Debug\ProxySocket.pdb
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\obj\Debug\ProxySocket_test.csprojResolveAssemblyReference.cache
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\obj\Debug\ProxySocket_test.exe
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket_test\obj\Debug\ProxySocket_test.pdb

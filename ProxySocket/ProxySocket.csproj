@@ -40,12 +40,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enumerations\Socks4Response.cs" />
     <Compile Include="Enumerations\Socks5Response.cs" />
     <Compile Include="Proxy\BaseProxy.cs" />
     <Compile Include="Enumerations\Socks5Method.cs" />
     <Compile Include="Enumerations\SocksVersion.cs" />
     <Compile Include="Objects\Packet.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Proxy\Socks4Proxy.cs" />
     <Compile Include="Proxy\Socks5Proxy.cs" />
     <Compile Include="EventArguments\StatusChangedEventArgs.cs" />
   </ItemGroup>

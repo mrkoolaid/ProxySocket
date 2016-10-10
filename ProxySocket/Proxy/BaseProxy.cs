@@ -11,9 +11,10 @@ namespace ProxySocket.Proxy
     public delegate void DisconnectedEventHandler(object sender, EventArgs e);
     public delegate void StatusChangedEventHandler(object sender, StatusChangedEventArgs e);
 
-    public abstract class BaseProxy
+    public abstract class BaseProxy : IDisposable
     {
         #region Properties
+        public bool Connected { get { return _connected; } }
         public IPEndPoint Proxy { get { return _proxyEndPoint; } }
         public IPEndPoint Target { get { return _targetEndPoint; } }
         public string Username { get; set; }
@@ -28,10 +29,12 @@ namespace ProxySocket.Proxy
         #endregion
 
         #region Fields
-        internal Socket _socket;
-        internal IPEndPoint _proxyEndPoint;
-        internal IPEndPoint _targetEndPoint;
-        internal byte[] buffer;
+        protected bool _connected;
+        protected Socket _socket;
+        protected IPEndPoint _proxyEndPoint;
+        protected IPEndPoint _targetEndPoint;
+        protected byte[] buffer;
+        protected bool _disposed;
         #endregion
 
         #region Constructors
@@ -69,19 +72,13 @@ namespace ProxySocket.Proxy
             _socket.Connect(_proxyEndPoint);
             InvokeConnected();
         }
-        
+
         public void BeginConnect(AsyncCallback callback, object state)
         {
             Socket socket = BuildSocket();
             _socket.BeginConnect(_proxyEndPoint, callback, state);
         }
-
-        public void EndConnect(IAsyncResult result)
-        {
-            _socket.EndConnect(result);
-            InvokeConnected();
-        }
-
+        
         private Socket BuildSocket()
         {
             _socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -92,37 +89,68 @@ namespace ProxySocket.Proxy
         #endregion
 
         #region Packet Methods
-        internal void SendPacket(Packet packet)
+        public void SendPacket(Packet packet)
         {
             byte[] buffer = packet.Buffer;
             _socket.Send(buffer, 0, buffer.Length, SocketFlags.None);
         }
 
-        internal void SendPacketAsync(Packet packet, AsyncCallback callback, object state)
+        public void ReceivePacket(int size = 1024)
         {
-            byte[] buffer = packet.Buffer;
+            buffer = new byte[size];
+            _socket.Receive(buffer, 0, buffer.Length, SocketFlags.None);
+        }
+
+        public void SendPacketAsync(Packet packet, AsyncCallback callback, object state)
+        {
+            buffer = packet.Buffer;
             _socket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, callback, state);
         }
 
-        internal void ReceivePacketAsync(int size, SocketFlags socketFlags, AsyncCallback callback, object state)
+        public void ReceivePacketAsync(SocketFlags socketFlags, AsyncCallback callback, object state, int size)
         {
             buffer = new byte[size];
             _socket.BeginReceive(buffer, 0, size, socketFlags, callback, state);
+        }
+
+        protected void EndSend(string status, IAsyncResult result)
+        {
+            _socket.EndSend(result);
+            InvokeStatus(status);
         }
         #endregion
 
         #region Disconnection Methods
         public void Disconnect()
         {
-            _socket.Shutdown(SocketShutdown.Both);
-            _socket.Disconnect(true);
-            InvokeDisconnected();
+            if (_socket != null)
+            {
+                _socket.Shutdown(SocketShutdown.Both);
+                _socket.Disconnect(true);
+                InvokeDisconnected();
+            }
         }
 
         public void DisconnectAsync()
         {
-            _socket.Shutdown(SocketShutdown.Both);
-            _socket.BeginDisconnect(true, new AsyncCallback(OnSocketDisconnected), null);
+            if (_socket != null)
+            {
+                _socket.Shutdown(SocketShutdown.Both);
+                _socket.BeginDisconnect(true, new AsyncCallback(OnSocketDisconnected), null);
+            }
+        }
+        
+        public void BeginDisconnect(AsyncCallback callback, object state)
+        {
+            _socket.BeginDisconnect(true, callback, state);
+        }
+        #endregion
+
+        #region Callback Methods
+        public void EndConnect(IAsyncResult result)
+        {
+            _socket.EndConnect(result);
+            InvokeConnected();
         }
 
         private void OnSocketDisconnected(IAsyncResult result)
@@ -131,33 +159,58 @@ namespace ProxySocket.Proxy
             InvokeDisconnected();
         }
 
-        public void BeginDisconnect(AsyncCallback callback, object state)
-        {
-            _socket.BeginDisconnect(true, callback, state);
-        }
-
         public void EndDisconnect(IAsyncResult result)
         {
             _socket.EndDisconnect(result);
         }
         #endregion
 
+        #region Miscellaneous
+        protected byte[] GetPortBytes()
+        {
+            return new byte[2] { (byte)(_targetEndPoint.Port / 256), (byte)(_targetEndPoint.Port % 256) };
+        }
+
+        protected byte[] GetAddressBytes(IPAddress address)
+        {
+            long value = IPAddress.HostToNetworkOrder(address.Address);
+            byte[] ret = new byte[4];
+            ret[0] = (byte)(value % 256);
+            ret[1] = (byte)((value / 256) % 256);
+            ret[2] = (byte)((value / 65536) % 256);
+            ret[3] = (byte)(value / 16777216);
+            return ret;
+        }
+        #endregion
+
         #region Event Invokers
-        internal void InvokeConnected()
+        protected void InvokeConnected()
         {
             OnConnected?.Invoke(this, new EventArgs());
             InvokeStatus("Connected.");
         }
 
-        internal void InvokeDisconnected()
+        protected void InvokeDisconnected()
         {
             OnDisconnected?.Invoke(this, new EventArgs());
             InvokeStatus("Disconnected.");
         }
 
-        internal void InvokeStatus(string status)
+        protected void InvokeStatus(string status)
         {
             OnStatusChanged?.Invoke(this, new StatusChangedEventArgs(status));
+        }
+        #endregion
+
+        #region IDisposable Support
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _socket.Dispose();
+
+                _disposed = true;
+            }
         }
         #endregion
     }

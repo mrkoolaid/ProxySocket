@@ -14,7 +14,6 @@ namespace ProxySocket.Proxy
     public sealed class Socks5Proxy : BaseProxy
     {
         #region Properties
-        public bool Connected { get { return _connected; } }
         public Socks5Method NegotiatedMethod { get { return _negotiatedMethod; } }
         #endregion
 
@@ -25,7 +24,6 @@ namespace ProxySocket.Proxy
         #endregion
 
         #region Fields
-        private bool _connected;
         private Socks5Method _negotiatedMethod;
         #endregion
 
@@ -38,11 +36,6 @@ namespace ProxySocket.Proxy
         #endregion
 
         #region Connection Methods
-        public new void Connect()
-        {
-            base.Connect();
-        }
-        
         public void AutoConnect(params Socks5Method[] methods)
         {
             if (Array.Exists(methods, method => method == Socks5Method.Credentials) && (string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password)))
@@ -97,7 +90,7 @@ namespace ProxySocket.Proxy
         #region Incoming
         public void BeginReceiveNegotiation(AsyncCallback callback, object state = null)
         {
-            ReceivePacketAsync(2, SocketFlags.None, callback, state);
+            ReceivePacketAsync(SocketFlags.None, callback, state, 2);
         }
 
         public void EndReceiveNegotiation(IAsyncResult result)
@@ -109,8 +102,7 @@ namespace ProxySocket.Proxy
 
         private void ReceiveNegotiation()
         {
-            buffer = new byte[2];
-            _socket.Receive(buffer, 0, buffer.Length, SocketFlags.None);
+            ReceivePacket(2);
 
             CheckNegotiation();
         }
@@ -143,7 +135,7 @@ namespace ProxySocket.Proxy
         #region Incoming
         public void BeginReceiveCredentials(AsyncCallback callback, object state = null)
         {
-            ReceivePacketAsync(2, SocketFlags.None, callback, state);
+            ReceivePacketAsync(SocketFlags.None, callback, state, 2);
         }
 
         public void EndReceiveCredentials(IAsyncResult result)
@@ -155,8 +147,7 @@ namespace ProxySocket.Proxy
 
         private void ReceiveCredentials()
         {
-            buffer = new byte[2];
-            int size = _socket.Receive(buffer, 0, buffer.Length, SocketFlags.None);
+            ReceivePacket(2);
 
             CheckCredentials();
         }
@@ -189,7 +180,7 @@ namespace ProxySocket.Proxy
         #region Incoming
         public void BeginReceiveRequestDetails(AsyncCallback callback, object state = null)
         {
-            ReceivePacketAsync(18, SocketFlags.None, callback, state);
+            ReceivePacketAsync(SocketFlags.None, callback, state, 18);
         }
 
         public void EndReceiveRequestDetails(IAsyncResult result)
@@ -201,8 +192,7 @@ namespace ProxySocket.Proxy
 
         private void ReceiveRequestDetails()
         {
-            buffer = new byte[18];
-            _socket.Receive(buffer, 0, buffer.Length, SocketFlags.None);
+            ReceivePacket(18);
 
             CheckRequestDetails();
         }
@@ -262,7 +252,7 @@ namespace ProxySocket.Proxy
         }
         #endregion
 
-        #region Checking Methods
+        #region Checker Methods
         private void CheckNegotiation()
         {
             CheckVersion(buffer[0]);
@@ -284,7 +274,7 @@ namespace ProxySocket.Proxy
 
             if (buffer[1] != 0x00)
             {
-                Disconnect();
+                Dispose();
                 throw new Exception("Credentials not accepted.");
             }
 
@@ -303,7 +293,7 @@ namespace ProxySocket.Proxy
                 InvokeHandshakeAccepted();
             }
             else
-                Disconnect();
+                Dispose();
 
             InvokeStatus($"Response: {response.ToString()}.\r\nConnected: {_connected}");
         }
@@ -340,7 +330,7 @@ namespace ProxySocket.Proxy
         private Packet BuildRequestDetails()
         {
             byte[] addressBytes = _targetEndPoint.Address.GetAddressBytes();
-            byte[] portBytes = new byte[2] { (byte)(_targetEndPoint.Port / 256), (byte)(_targetEndPoint.Port % 256) };
+            byte[] portBytes = GetPortBytes();
 
             Packet packet = new Packet();
             packet.AppendData((byte)SocksVersion.SOCKS5);
@@ -366,15 +356,9 @@ namespace ProxySocket.Proxy
         {
             if (version != (byte)SocksVersion.SOCKS5)
             {
-                _socket.Dispose();
+                Dispose();
                 throw new ProtocolViolationException("Proxy does not support the socks 5 protocol. Attempt a socks 4 approach.");
             }
-        }
-
-        private void EndSend(string status, IAsyncResult result)
-        {
-            _socket.EndSend(result);
-            InvokeStatus(status);
         }
         #endregion
 

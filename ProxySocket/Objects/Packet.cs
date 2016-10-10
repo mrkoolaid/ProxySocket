@@ -2,7 +2,7 @@
 
 namespace ProxySocket.Objects
 {
-    internal sealed class Packet
+    public sealed class Packet
     {
         public byte[] Buffer { get { return _data.ToArray(); } }
         public List<byte> Data { get { return _data; } }

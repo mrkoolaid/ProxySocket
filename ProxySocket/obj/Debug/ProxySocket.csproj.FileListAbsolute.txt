@@ -1,0 +1,5 @@
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket\bin\Debug\ProxySocket.dll
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket\bin\Debug\ProxySocket.pdb
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket\obj\Debug\ProxySocket.csprojResolveAssemblyReference.cache
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket\obj\Debug\ProxySocket.dll
+C:\Users\Kennard\Documents\Visual Studio 2015\Projects\ProxySocket\ProxySocket\obj\Debug\ProxySocket.pdb
